@@ -1,0 +1,99 @@
+public class RedisService {
+
+    @Autowired
+    private StringRedisTemplate redisTemplate;
+
+    /**
+     * 设置key-value存储
+     */
+    public void set(String key, String value) {
+        redisTemplate.opsForValue().set(key, value);
+    }
+
+    /**
+     * 支持过期机制key-value存储
+     */
+    public void set(String key, String value, long timeout, TimeUnit unit) {
+        redisTemplate.opsForValue().set(key, value, timeout, unit);
+    }
+
+    /**
+     * 根据Key获取缓存Value
+     */
+    public String get(String key) {
+        return redisTemplate.opsForValue().get(key);
+    }
+
+    /**
+     * 获取缓存，不存在则设置新值
+     */
+    public String getAndSet(String key, String value) {
+        return redisTemplate.opsForValue().getAndSet(key, value);
+    }
+
+    /**
+     * 保存多条hash表记录
+     */
+    public void setMap(String key, Map<String, String> value) {
+        redisTemplate.opsForHash().putAll(key, value);
+    }
+
+    /**
+     * 保存单条hash表记录
+     */
+    public void setMap(String key, String hashKey, String value) {
+        redisTemplate.<String, String>opsForHash().put(key, hashKey, value);
+    }
+
+    /**
+     * 获取redis hash表所有的hashKey
+     */
+    public Collection<String> getAllHashKey(String key) {
+        Collection<String> hashKeys = redisTemplate.<String, String>opsForHash().keys(key);
+        return hashKeys;
+    }
+
+    /**
+     * 批量获取hashKey对应的value
+     */
+    public Map<String, String> getHashValuesByHashKeys(String key, Collection<String> hashKeys) {
+        Map<String, String> map = new HashMap<String, String>();
+        redisTemplate.<String, String>opsForHash().multiGet(key, hashKeys);
+        for (String hashKey : hashKeys) {
+            map.put(hashKey, redisTemplate.<String, String>opsForHash().get(key, hashKey));
+        }
+        return map;
+    }
+
+    /**
+     * 获取hashKey对应的Value
+     */
+    public String getHashValueByHashKey(String key, String hashKey) {
+        return redisTemplate.<String, String>opsForHash().get(key, hashKey);
+    }
+
+    public <HK> void delHashValueByHashKey(String key, HK... hashKeys) {
+        redisTemplate.<String, HK>opsForHash().delete(key, hashKeys);
+    }
+
+    /**
+     * 根据Key删除缓存
+     */
+    public void delHashValueByHashKey(String key) {
+        redisTemplate.delete(key);
+    }
+
+
+    public void setHash(String key,String hashKey, String value, Date expireAtTime) {
+        if(!redisTemplate.hasKey(key)){
+            redisTemplate.opsForHash().put(key,hashKey, value);
+            redisTemplate.expireAt(key,expireAtTime);
+        }else{
+            redisTemplate.opsForHash().put(key,hashKey, value);
+        }
+    }
+
+    public boolean hasKey(String key){
+        return  redisTemplate.hasKey(key);
+    }
+}
